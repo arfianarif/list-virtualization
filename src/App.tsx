@@ -1,31 +1,28 @@
 import Layout from '@components/layout'
-import { generateFakeItems, type Item } from './lib/faker'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import VirtualizedList from '@components/virtualized-list'
 import { useQueryState } from 'nuqs'
-import useDebounce from './hooks/use-debounce' // Import the useDebounce hook
+import { generateFakeItems, type Item } from '@lib/faker'
+import useDebounce from '@hooks/use-debounce'
 
 const data = generateFakeItems(1000)
 
 const App = () => {
   const [name, setName] = useQueryState('name')
-  const debouncedName = useDebounce(name, 500) // Apply debounce to 'name' with a 500ms delay
+  const debouncedName = useDebounce(name, 500)
 
   const [windowHeight, setWindowHeight] = useState(window.innerHeight)
 
-  // Memoize the handleResize function to avoid recreating it on every render
   const handleResize = useCallback(() => {
     setWindowHeight(window.innerHeight)
   }, [])
 
-  // Memoize filtered data to prevent recalculating it on every render
   const filteredData = useMemo(() => {
     return data.filter((item) =>
       item.name.toLowerCase().includes(debouncedName?.toLowerCase() || ''),
     )
   }, [debouncedName])
 
-  // Use effect to listen to window resize events
   useEffect(() => {
     window.addEventListener('resize', handleResize)
 
@@ -34,7 +31,6 @@ const App = () => {
     }
   }, [handleResize])
 
-  // Memoize the Row component so it's not recreated on each render
   const renderRow = useCallback(
     (item: Item) => (
       <div className='flex p-4'>
@@ -45,27 +41,33 @@ const App = () => {
         </div>
       </div>
     ),
-    [], // Empty dependency array means it will only be created once
+    [],
   )
 
   return (
     <Layout>
-      {/* Input for filtering by name */}
-      <input
-        value={name || ''}
-        onChange={(e) => setName(e.target.value)} // Update query parameter
-        placeholder='Search by name'
-      />
-      <button onClick={() => setName(null)}>Clear</button>
+      <div className='w-full my-2 max-w-md flex flex-col gap-4 p-2'>
+        <input
+          value={name || ''}
+          onChange={(e) => setName(e.target.value)}
+          placeholder='Search by name'
+          className='p-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500'
+        />
+        <button
+          onClick={() => setName(null)}
+          className='bg-slate-500 w-fit text-white px-4 py-2 rounded-lg hover:bg-slate-600 transition duration-200'
+        >
+          Clear
+        </button>
+      </div>
 
-      {/* Display the filtered data */}
       {filteredData?.length > 0 && (
         <VirtualizedList
-          items={filteredData} // Pass filtered data to the virtualized list
-          renderRow={renderRow} // Pass memoized row renderer
-          height={windowHeight} // Dynamic height based on window size
-          itemSize={100} // Each item height
-          width='100%' // Full width
+          items={filteredData}
+          renderRow={renderRow}
+          height={windowHeight}
+          itemSize={100}
+          width='100%'
         />
       )}
     </Layout>
